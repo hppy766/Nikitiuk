@@ -109,6 +109,15 @@
   }
   .c-comment { color: var(--muted); }
   .quote { font-style: italic; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 14px; }
+  .video-box { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: #000; }
+  .video-box iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .row input { flex: 1 1 240px; width: auto; }
+  .media-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 20px; }
+  .media-grid h3 { font-size: 1rem; margin-bottom: 10px; }
+  .cat-frame { border-radius: 14px; overflow: hidden; background: var(--card-2); aspect-ratio: 3 / 2; display: grid; place-items: center; }
+  .cat-frame img, .cat-frame svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+  audio { width: 100%; margin-top: 4px; }
   footer { text-align: center; color: var(--muted); font-size: .85rem; margin-top: 8px; }
   .toast {
     position: fixed; bottom: 22px; left: 50%; transform: translate(-50%, 80px);
@@ -151,6 +160,31 @@
       <div class="stat"><small>Час завантаження сторінки</small><b id="load">Вимірюється...</b></div>
     </div>
     <p class="url-line">Повна URL-адреса: <span id="fullUrl">завантаження...</span></p>
+  </section>
+
+  <section class="card">
+    <h2>🎬 Мультимедіа: відео, котики та музика</h2>
+    <div class="video-box"><iframe id="ytFrame" title="YouTube відео" src="https://www.youtube-nocookie.com/embed/0KCY0-WHaPM" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+    <div class="row">
+      <input id="ytLink" type="url" placeholder="Встав своє посилання з YouTube, щоб змінити відео" aria-label="Посилання на YouTube">
+      <button class="btn ghost" id="ytBtn" type="button">▶️ Показати</button>
+    </div>
+    <div class="media-grid">
+      <div>
+        <h3>🐱 Котик дня</h3>
+        <div class="cat-frame" id="catFrame">
+          <img id="catImg" alt="Випадковий котик" loading="lazy" src="https://cataas.com/cat?width=600&height=400">
+        </div>
+        <div class="btns" style="margin-top:12px"><button class="btn ghost" id="catBtn" type="button">🔄 Ще котика</button></div>
+      </div>
+      <div>
+        <h3>🎵 Мелодія для настрою</h3>
+        <div class="stat">
+          <small>Коротка оригінальна мелодія (16 с)</small>
+          <audio id="player" controls loop preload="none" src="melody.wav">Ваш браузер не підтримує аудіо.</audio>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section class="card">
@@ -310,6 +344,38 @@
     });
   });
   updateProgress();
+
+  /* --- YouTube: змінити відео за посиланням --- */
+  function ytId(u) {
+    var m = String(u).trim().match(/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+  $('ytBtn').addEventListener('click', function () {
+    var id = ytId($('ytLink').value);
+    if (!id) { toast('⚠️ Не схоже на посилання YouTube'); return; }
+    $('ytFrame').src = 'https://www.youtube-nocookie.com/embed/' + id;
+    toast('▶️ Відео змінено');
+  });
+
+  /* --- Котики: фото з cataas.com, а якщо не завантажилось — малюнок --- */
+  var catSvg = '<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Малюнок котика">' +
+    '<rect width="300" height="200" fill="#f9d6e8"/>' +
+    '<polygon points="95,70 105,25 135,55" fill="#f4a261"/><polygon points="205,70 195,25 165,55" fill="#f4a261"/>' +
+    '<polygon points="103,60 107,40 124,56" fill="#f8b4c8"/><polygon points="197,60 193,40 176,56" fill="#f8b4c8"/>' +
+    '<ellipse cx="150" cy="105" rx="68" ry="58" fill="#f4a261"/>' +
+    '<ellipse cx="127" cy="98" rx="9" ry="12" fill="#222"/><ellipse cx="173" cy="98" rx="9" ry="12" fill="#222"/>' +
+    '<circle cx="130" cy="93" r="3" fill="#fff"/><circle cx="176" cy="93" r="3" fill="#fff"/>' +
+    '<polygon points="144,115 156,115 150,123" fill="#e75480"/>' +
+    '<path d="M150 123 q-8 10 -16 4 M150 123 q8 10 16 4" stroke="#222" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+    '<g stroke="#222" stroke-width="1.5" stroke-linecap="round"><line x1="85" y1="115" x2="118" y2="119"/><line x1="85" y1="127" x2="118" y2="124"/><line x1="215" y1="115" x2="182" y2="119"/><line x1="215" y1="127" x2="182" y2="124"/></g>' +
+    '<text x="150" y="190" text-anchor="middle" font-size="14" fill="#8b5cf6" font-family="sans-serif">мур-мур 💜</text></svg>';
+  var catImg = $('catImg');
+  catImg.addEventListener('error', function () { $('catFrame').innerHTML = catSvg; });
+  $('catBtn').addEventListener('click', function () {
+    var f = $('catFrame');
+    if (!f.contains(catImg)) { f.innerHTML = ''; f.appendChild(catImg); }
+    catImg.src = 'https://cataas.com/cat?width=600&height=400&t=' + Date.now();
+  });
 
   /* --- Конфеті --- */
   var cv = $('confetti'), ctx = cv.getContext('2d'), parts = [], raf;
